@@ -1,0 +1,2 @@
+# Example Usage
+OUTLOOK_EMAIL="your.email@domain.com" USER_ID="MYLOGINID" USER_PASS="MYPASSWORD" SLACK_PRIVATE_MESSAGE_URL="https://XXX.slack.com/messages/YYY" SLACK_LOGIN_URL="https://XXX.slack.com/" python calendar_refresh.py
