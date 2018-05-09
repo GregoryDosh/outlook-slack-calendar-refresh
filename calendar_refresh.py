@@ -68,7 +68,7 @@ class SeleniumOutlook(object):
             self.driver.get("https://outlook.office.com/owa/?path=/calendar/view/Day")
             self._hide_left_nav_bar()
             self._send_offset_shortcuts(time_offset)
-            time.sleep(2)
+            time.sleep(2.5)
             self.driver.get_screenshot_as_file(os.path.expanduser(picture_location))
         else:
             _LOGGER.error("Can't screen shot when not logged in")
@@ -79,7 +79,7 @@ class SeleniumOutlook(object):
             self.driver.get("https://outlook.office.com/owa/?path=/calendar/view/WorkWeek")
             self._hide_left_nav_bar()
             self._send_offset_shortcuts(time_offset)
-            time.sleep(2)
+            time.sleep(2.5)
             self.driver.get_screenshot_as_file(os.path.expanduser(picture_location))
         else:
             _LOGGER.error("Can't screen shot when not logged in")
@@ -163,7 +163,7 @@ class SlackCalendarUpload(object):
                 break
 
 
-    def upload_file(self, filename, title, maxWait=10):
+    def upload_file(self, filename, title, maxWait=15):
         _LOGGER.debug("Uploading {}".format(filename))
         self.driver.find_element_by_id("primary_file_button").click()
         self.driver.find_element_by_xpath("//li[@data-which='choose']").click()
