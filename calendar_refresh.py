@@ -1,22 +1,33 @@
+import datetime
+import logging
 import os
 import time
-import logging
 
 import selenium
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 _LOGGER = logging.getLogger(__name__)
 
 class SeleniumOutlook(object):
-    def __init__(self, email_address):
+    def __init__(self, email_address, userid, password):
         super(SeleniumOutlook, self).__init__()
         self.email_address = email_address
+        self.userid = userid
+        self.password = password
         self.driver = None
         self.logged_in = False
 
     def __enter__(self):
         _LOGGER.debug("Opening chromedriver")
+
+        options = webdriver.ChromeOptions()
+        options.add_argument("--ignore-certificate-errors")
+        options.add_argument("--ignore-urlfetcher-cert-requests")
+
+        capabilities = options.to_capabilities()
+
         self.driver = webdriver.Chrome()
         self.driver.implicitly_wait(5)
         self.driver.get("https://outlook.office.com/")
@@ -26,11 +37,23 @@ class SeleniumOutlook(object):
             # Click submit
             self.driver.find_element_by_xpath("//input[@type='submit']").click()
             time.sleep(8)
-            # Ugh, yes, stay signed in
+            # If finding the corp login, then do that
+            try:
+                # Input username
+                self.driver.find_element_by_id("loginID").send_keys(self.userid)
+
+                # Input password
+                self.driver.find_element_by_id("pass").send_keys(self.password)
+
+                # Click submit
+                self.driver.find_element_by_xpath("//button[@type='submit']").click()
+            except selenium.common.exceptions.NoSuchElementException:
+                _LOGGER.debug("No login found, assuming SAML took over")
             self.driver.find_element_by_id("idSIButton9").click()
         except selenium.common.exceptions.NoSuchElementException:
             _LOGGER.debug("Should be logged in already?")
         # This is to wait for the page to load so we know we logged in...
+        time.sleep(2)
         try:
             self.driver.find_element_by_class_name("ms-Icon--calendar")
             self.logged_in = True
@@ -189,11 +212,22 @@ class SlackCalendarUpload(object):
             _LOGGER.warn("Pictures may not have uploaded completely")
 
 if __name__ == '__main__':
-    with SeleniumOutlook(email_address=os.environ['OUTLOOK_EMAIL']) as ol:
-        ol.screenshot_day_calendar("/tmp/today.png")
-        ol.screenshot_day_calendar("/tmp/tomorrow.png", time_offset=1)
-        ol.screenshot_week_calendar("/tmp/this_week.png")
-        ol.screenshot_week_calendar("/tmp/next_week.png", time_offset=1)
+    with SeleniumOutlook(email_address=os.environ['OUTLOOK_EMAIL'],
+                         userid=os.environ['USER_ID'],
+                         password=os.environ['USER_PASS'],
+                         ) as ol:
+
+        today = datetime.datetime.now()
+        if today.strftime("%A") != "Friday":
+            ol.screenshot_day_calendar("/tmp/today.png")
+            ol.screenshot_day_calendar("/tmp/tomorrow.png", time_offset=1)
+            ol.screenshot_week_calendar("/tmp/this_week.png")
+            ol.screenshot_week_calendar("/tmp/next_week.png", time_offset=1)
+        else:
+            ol.screenshot_day_calendar("/tmp/today.png", time_offset=3)
+            ol.screenshot_day_calendar("/tmp/tomorrow.png", time_offset=4)
+            ol.screenshot_week_calendar("/tmp/this_week.png", time_offset=1)
+            ol.screenshot_week_calendar("/tmp/next_week.png", time_offset=2)
 
     with SlackCalendarUpload(slack_private_message_url=os.environ['SLACK_PRIVATE_MESSAGE_URL'],
                              slack_login_url=os.environ['SLACK_LOGIN_URL'],
@@ -205,3 +239,4 @@ if __name__ == '__main__':
         sl.upload_file("/tmp/tomorrow.png", "Tomorrow")
         sl.upload_file("/tmp/this_week.png", "This Week")
         sl.upload_file("/tmp/next_week.png", "Next Week")
+    _LOGGER.info("Upload complete {}".format(time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())))
