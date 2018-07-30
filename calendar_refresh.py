@@ -171,8 +171,8 @@ class SlackCalendarUpload(object):
                     _LOGGER.debug("removing an image")
                     el.click()
                     self.driver.find_element_by_tag_name('body').send_keys(Keys.TAB)
-                    el.find_elements_by_class_name('c-file__action_button')[1].click()
-                    for _ in range(7):
+                    el.find_elements_by_class_name('c-file__action_button')[2].click()
+                    for _ in range(6):
                         self.driver.find_element_by_tag_name('body').send_keys(Keys.TAB)
 
                     self.driver.find_element_by_class_name('c-menu_item__li--highlighted').click()
@@ -182,7 +182,7 @@ class SlackCalendarUpload(object):
                     time.sleep(1)
                 _LOGGER.debug("Double checking images")
             except selenium.common.exceptions.NoSuchElementException:
-                _LOGGER.debug("All pictures deleted")
+                _LOGGER.debug("All pictures deleted?")
                 break
 
 
@@ -192,13 +192,11 @@ class SlackCalendarUpload(object):
         self.driver.find_element_by_xpath("//li[@data-which='choose']").click()
         file_upload = self.driver.find_element_by_xpath("//input[@type='file']")
         file_upload.send_keys(os.path.expanduser(filename))
-        title_el = self.driver.find_element_by_id("upload_file_title")
-        time.sleep(0.25)
-        title_el.clear()
-        time.sleep(0.25)
+        self.driver.find_element_by_class_name("p-file-upload_dialog__preview_file_name_edit").send_keys(Keys.ENTER)
+        title_el = self.driver.find_element_by_id("file-upload-name")
         title_el.send_keys(title)
         time.sleep(1.25)
-        self.driver.find_element_by_class_name("dialog_go").click()
+        self.driver.find_element_by_class_name("c-dialog__go").click()
         time.sleep(0.25)
         while maxWait > 0:
             if 'Processing uploaded file' in self.driver.page_source:
